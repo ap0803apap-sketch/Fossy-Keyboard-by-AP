@@ -55,6 +55,18 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getInt(CUSTOM_KEY_COLOR, 0)
         set(customKeyColor) = prefs.edit().putInt(CUSTOM_KEY_COLOR, customKeyColor).apply()
 
+    var customKeyboardBackgroundColor: Int
+        get() = prefs.getInt(CUSTOM_KEYBOARD_BACKGROUND_COLOR, 0)
+        set(value) = prefs.edit().putInt(CUSTOM_KEYBOARD_BACKGROUND_COLOR, value).apply()
+
+    var customKeyboardTextColor: Int
+        get() = prefs.getInt(CUSTOM_KEYBOARD_TEXT_COLOR, 0)
+        set(value) = prefs.edit().putInt(CUSTOM_KEYBOARD_TEXT_COLOR, value).apply()
+
+    var customKeyboardAccentColor: Int
+        get() = prefs.getInt(CUSTOM_KEYBOARD_ACCENT_COLOR, 0)
+        set(value) = prefs.edit().putInt(CUSTOM_KEYBOARD_ACCENT_COLOR, value).apply()
+
     var enableLearning: Boolean
         get() = prefs.getBoolean(ENABLE_LEARNING, true)
         set(enableLearning) = prefs.edit().putBoolean(ENABLE_LEARNING, enableLearning).apply()

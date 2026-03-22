@@ -123,6 +123,9 @@ import org.fossify.keyboard.helpers.LANGUAGE_UKRAINIAN
 import org.fossify.keyboard.helpers.MyKeyboard
 import org.fossify.keyboard.helpers.AMOLED_MODE
 import org.fossify.keyboard.helpers.CUSTOM_KEY_COLOR
+import org.fossify.keyboard.helpers.CUSTOM_KEYBOARD_ACCENT_COLOR
+import org.fossify.keyboard.helpers.CUSTOM_KEYBOARD_BACKGROUND_COLOR
+import org.fossify.keyboard.helpers.CUSTOM_KEYBOARD_TEXT_COLOR
 import org.fossify.keyboard.helpers.ENABLE_LEARNING
 import org.fossify.keyboard.helpers.ENABLE_TEXT_PREDICTION
 import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_STYLE
@@ -719,7 +722,7 @@ class SimpleKeyboardIME : InputMethodService(), OnKeyboardActionListener, Shared
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         if (key != null && key in arrayOf(
-                ENABLE_LEARNING, ENABLE_TEXT_PREDICTION, LEARNED_KEYBOARD_DATA, AMOLED_MODE, KEYBOARD_PALETTE_STYLE, CUSTOM_KEY_COLOR,
+                ENABLE_LEARNING, ENABLE_TEXT_PREDICTION, LEARNED_KEYBOARD_DATA, AMOLED_MODE, KEYBOARD_PALETTE_STYLE, CUSTOM_KEY_COLOR, CUSTOM_KEYBOARD_BACKGROUND_COLOR, CUSTOM_KEYBOARD_TEXT_COLOR, CUSTOM_KEYBOARD_ACCENT_COLOR,
                 SHOW_KEY_BORDERS, KEYBOARD_LANGUAGE, HEIGHT_PERCENTAGE, KEY_SPACING, SHOW_NUMBERS_ROW, VOICE_INPUT_METHOD,
                 TEXT_COLOR, BACKGROUND_COLOR, PRIMARY_COLOR, ACCENT_COLOR, CUSTOM_TEXT_COLOR, CUSTOM_BACKGROUND_COLOR,
                 CUSTOM_PRIMARY_COLOR, CUSTOM_ACCENT_COLOR, IS_GLOBAL_THEME_ENABLED, IS_SYSTEM_THEME_ENABLED

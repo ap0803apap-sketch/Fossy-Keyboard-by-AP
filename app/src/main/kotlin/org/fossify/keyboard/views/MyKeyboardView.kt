@@ -84,6 +84,8 @@ import org.fossify.keyboard.extensions.getCurrentClip
 import org.fossify.keyboard.extensions.getCurrentVoiceInputMethod
 import org.fossify.keyboard.extensions.getKeyboardBackgroundColor
 import org.fossify.keyboard.extensions.getKeyboardKeyColor
+import org.fossify.keyboard.extensions.getKeyboardPrimaryColor
+import org.fossify.keyboard.extensions.getKeyboardTextColor
 import org.fossify.keyboard.extensions.getStrokeColor
 import org.fossify.keyboard.extensions.isDeviceLocked
 import org.fossify.keyboard.extensions.onScroll
@@ -281,10 +283,10 @@ class MyKeyboardView @JvmOverloads constructor(
         mSpaceMoveThreshold = resources.getDimension(R.dimen.medium_margin).toInt()
 
         with(safeStorageContext) {
-            mTextColor = getProperTextColor()
-            mBackgroundColor = getProperBackgroundColor()
+            mTextColor = getKeyboardTextColor()
             mKeyboardBackgroundColor = getKeyboardBackgroundColor()
-            mPrimaryColor = getProperPrimaryColor()
+            mBackgroundColor = mKeyboardBackgroundColor
+            mPrimaryColor = getKeyboardPrimaryColor()
             mStrokeColor = getStrokeColor()
         }
 
@@ -477,10 +479,10 @@ class MyKeyboardView @JvmOverloads constructor(
 
     fun setupKeyboard(changedView: View? = null) {
         with(safeStorageContext) {
-            mTextColor = getProperTextColor()
-            mBackgroundColor = getProperBackgroundColor()
+            mTextColor = getKeyboardTextColor()
             mKeyboardBackgroundColor = getKeyboardBackgroundColor()
-            mPrimaryColor = getProperPrimaryColor()
+            mBackgroundColor = mKeyboardBackgroundColor
+            mPrimaryColor = getKeyboardPrimaryColor()
             mStrokeColor = getStrokeColor()
 
             mShowKeyBorders = config.showKeyBorders
