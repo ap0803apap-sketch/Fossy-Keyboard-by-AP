@@ -178,6 +178,21 @@
             </RelativeLayout>
 
             <RelativeLayout
+                android:id="@+id/settings_show_key_press_animation_holder"
+                style="@style/SettingsHolderSwitchStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <org.fossify.commons.views.MyMaterialSwitch
+                    android:id="@+id/settings_show_key_press_animation"
+                    style="@style/SettingsSwitchStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/show_key_press_animation" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
                 android:id="@+id/settings_show_numbers_row_holder"
                 style="@style/SettingsHolderSwitchStyle"
                 android:layout_width="match_parent"
@@ -244,6 +259,36 @@
                     tools:text="@string/small" />
 
             </RelativeLayout>
+
+            <LinearLayout
+                android:id="@+id/settings_key_spacing_holder"
+                style="@style/SettingsHolderTextViewStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="16dp">
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/settings_key_spacing_label"
+                    style="@style/SettingsTextLabelStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/key_spacing" />
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/settings_key_spacing_slider"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:stepSize="1.0"
+                    android:valueFrom="0.0"
+                    android:valueTo="20.0"
+                    app:thumbHeight="24dp"
+                    app:thumbRadius="2dp"
+                    app:thumbWidth="4dp"
+                    app:trackHeight="16dp" />
+
+            </LinearLayout>
 
             <include
                 android:id="@+id/settings_layout_appearance_divider"

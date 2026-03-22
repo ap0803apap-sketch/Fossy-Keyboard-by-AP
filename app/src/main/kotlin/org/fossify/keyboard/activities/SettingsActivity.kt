@@ -58,9 +58,11 @@ class SettingsActivity : SimpleActivity() {
         setupSoundOnKeypress()
         setupShowPopupOnKeypress()
         setupShowKeyBorders()
+        setupShowKeyPressAnimation()
         setupManageKeyboardLanguages()
         setupKeyboardLanguage()
         setupKeyboardHeightMultiplier()
+        setupKeySpacing()
         setupShowEmojiKey()
         setupShowLanguageSwitchKey()
         setupShowClipboardContent()
@@ -181,6 +183,16 @@ class SettingsActivity : SimpleActivity() {
         }
     }
 
+    private fun setupShowKeyPressAnimation() {
+        binding.apply {
+            settingsShowKeyPressAnimation.isChecked = config.showKeyPressAnimation
+            settingsShowKeyPressAnimationHolder.setOnClickListener {
+                settingsShowKeyPressAnimation.toggle()
+                config.showKeyPressAnimation = settingsShowKeyPressAnimation.isChecked
+            }
+        }
+    }
+
     private fun setupManageKeyboardLanguages() {
         binding.apply {
             settingsManageKeyboardLanguagesHolder.setOnClickListener {
@@ -245,6 +257,15 @@ class SettingsActivity : SimpleActivity() {
                     settingsKeyboardHeightMultiplier.text =
                         getKeyboardHeightPercentageText(config.keyboardHeightPercentage)
                 }
+            }
+        }
+    }
+
+    private fun setupKeySpacing() {
+        binding.settingsKeySpacingSlider.apply {
+            value = config.keySpacing.toFloat()
+            addOnChangeListener { _, value, _ ->
+                config.keySpacing = value.toInt()
             }
         }
     }

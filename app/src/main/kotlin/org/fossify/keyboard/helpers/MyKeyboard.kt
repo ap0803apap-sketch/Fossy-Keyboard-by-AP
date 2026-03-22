@@ -177,6 +177,12 @@ class MyKeyboard {
         /** Role identifier for special keys (e.g., "tools" for the tools popup host key) */
         var role: String? = null
 
+        /** Animation properties */
+        var currentScale: Float = 1.0f
+        var currentRippleRadius: Float = 0f
+        var rippleCenterX: Float = 0f
+        var rippleCenterY: Float = 0f
+
         /**
          * Flags that specify the anchoring to edges of the keyboard for detecting touch events that are just out of the boundary of the key.
          * This is a bit mask of [MyKeyboard.EDGE_LEFT], [MyKeyboard.EDGE_RIGHT].
@@ -206,6 +212,11 @@ class MyKeyboard {
             width = getDimensionOrFraction(a, R.styleable.MyKeyboard_keyWidth, keyboard.mDisplayWidth, parent.defaultWidth)
             height = parent.defaultHeight
             gap = getDimensionOrFraction(a, R.styleable.MyKeyboard_horizontalGap, keyboard.mDisplayWidth, parent.defaultHorizontalGap)
+            
+            val extraGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, keyboard.mKeySpacing.toFloat(), res.displayMetrics).toInt()
+            gap += extraGap
+            width -= extraGap
+
             this.x += gap
 
             a.recycle()
@@ -273,6 +284,9 @@ class MyKeyboard {
         }
     }
 
+    /** Spacing between keys */
+    var mKeySpacing: Int = 0
+
     /**
      * Creates a keyboard from the given xml key layout file. Weeds out rows that have a keyboard mode defined but don't match the specified mode.
      * @param context the application or service context
@@ -285,6 +299,7 @@ class MyKeyboard {
         mDefaultWidth = mDisplayWidth / 10
         mDefaultHeight = mDefaultWidth
         mKeyboardHeightMultiplier = getKeyboardHeightMultiplier(context.config.keyboardHeightPercentage)
+        mKeySpacing = context.config.keySpacing
         mKeys = ArrayList()
         mEnterKeyType = enterKeyType
         loadKeyboard(context, context.resources.getXml(xmlLayoutResId))
@@ -308,6 +323,7 @@ class MyKeyboard {
         row.defaultWidth = keyWidth
         row.defaultHorizontalGap = mDefaultHorizontalGap
         mKeyboardHeightMultiplier = getKeyboardHeightMultiplier(context.config.keyboardHeightPercentage)
+        mKeySpacing = context.config.keySpacing
 
         characters.forEach { character ->
             val key = Key(row)

@@ -75,6 +75,7 @@ import org.fossify.keyboard.extensions.getStrokeColor
 import org.fossify.keyboard.extensions.safeStorageContext
 import org.fossify.keyboard.helpers.HEIGHT_PERCENTAGE
 import org.fossify.keyboard.helpers.KEYBOARD_LANGUAGE
+import org.fossify.keyboard.helpers.KEY_SPACING
 import org.fossify.keyboard.helpers.LANGUAGE_ARABIC
 import org.fossify.keyboard.helpers.LANGUAGE_BELARUSIAN_CYRL
 import org.fossify.keyboard.helpers.LANGUAGE_BELARUSIAN_LATN
@@ -640,12 +641,15 @@ class SimpleKeyboardIME : InputMethodService(), OnKeyboardActionListener, Shared
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         if (key != null && key in arrayOf(
-                SHOW_KEY_BORDERS, KEYBOARD_LANGUAGE, HEIGHT_PERCENTAGE, SHOW_NUMBERS_ROW, VOICE_INPUT_METHOD,
+                SHOW_KEY_BORDERS, KEYBOARD_LANGUAGE, HEIGHT_PERCENTAGE, KEY_SPACING, SHOW_NUMBERS_ROW, VOICE_INPUT_METHOD,
                 TEXT_COLOR, BACKGROUND_COLOR, PRIMARY_COLOR, ACCENT_COLOR, CUSTOM_TEXT_COLOR, CUSTOM_BACKGROUND_COLOR,
                 CUSTOM_PRIMARY_COLOR, CUSTOM_ACCENT_COLOR, IS_GLOBAL_THEME_ENABLED, IS_SYSTEM_THEME_ENABLED
             )
         ) {
             if (::binding.isInitialized) {
+                if (key in arrayOf(KEYBOARD_LANGUAGE, HEIGHT_PERCENTAGE, KEY_SPACING, SHOW_NUMBERS_ROW)) {
+                    reloadKeyboard()
+                }
                 keyboardView?.setupKeyboard()
                 updateBackgroundColors()
             }

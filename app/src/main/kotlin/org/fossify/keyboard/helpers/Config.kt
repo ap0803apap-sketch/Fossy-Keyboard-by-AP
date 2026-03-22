@@ -39,6 +39,10 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getBoolean(SHOW_KEY_BORDERS, true)
         set(showKeyBorders) = prefs.edit().putBoolean(SHOW_KEY_BORDERS, showKeyBorders).apply()
 
+    var showKeyPressAnimation: Boolean
+        get() = prefs.getBoolean(SHOW_KEY_PRESS_ANIMATION, true)
+        set(showKeyPressAnimation) = prefs.edit().putBoolean(SHOW_KEY_PRESS_ANIMATION, showKeyPressAnimation).apply()
+
     var lastExportedClipsFolder: String
         get() = prefs.getString(LAST_EXPORTED_CLIPS_FOLDER, "")!!
         set(lastExportedClipsFolder) = prefs.edit().putString(LAST_EXPORTED_CLIPS_FOLDER, lastExportedClipsFolder).apply()
@@ -50,6 +54,10 @@ class Config(context: Context) : BaseConfig(context) {
     var keyboardHeightPercentage: Int
         get() = prefs.getInt(HEIGHT_PERCENTAGE, 100)
         set(keyboardHeightMultiplier) = prefs.edit().putInt(HEIGHT_PERCENTAGE, keyboardHeightMultiplier).apply()
+
+    var keySpacing: Int
+        get() = prefs.getInt(KEY_SPACING, 0)
+        set(keySpacing) = prefs.edit().putInt(KEY_SPACING, keySpacing).apply()
 
     var showClipboardContent: Boolean
         get() = prefs.getBoolean(SHOW_CLIPBOARD_CONTENT, true)
