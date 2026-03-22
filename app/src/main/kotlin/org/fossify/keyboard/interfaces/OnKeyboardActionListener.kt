@@ -40,6 +40,11 @@ interface OnKeyboardActionListener {
     fun onText(text: String)
 
     /**
+     * Called when the user taps a learned prediction.
+     */
+    fun onPredictionSelected(prediction: String)
+
+    /**
      * Called to force the KeyboardView to reload the keyboard
      */
     fun reloadKeyboard()

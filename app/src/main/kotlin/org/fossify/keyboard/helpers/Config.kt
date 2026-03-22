@@ -43,6 +43,30 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getBoolean(SHOW_KEY_PRESS_ANIMATION, true)
         set(showKeyPressAnimation) = prefs.edit().putBoolean(SHOW_KEY_PRESS_ANIMATION, showKeyPressAnimation).apply()
 
+    var useAmoledMode: Boolean
+        get() = prefs.getBoolean(AMOLED_MODE, false)
+        set(useAmoledMode) = prefs.edit().putBoolean(AMOLED_MODE, useAmoledMode).apply()
+
+    var keyboardPaletteStyle: Int
+        get() = prefs.getInt(KEYBOARD_PALETTE_STYLE, KEYBOARD_PALETTE_DEFAULT)
+        set(keyboardPaletteStyle) = prefs.edit().putInt(KEYBOARD_PALETTE_STYLE, keyboardPaletteStyle).apply()
+
+    var customKeyColor: Int
+        get() = prefs.getInt(CUSTOM_KEY_COLOR, 0)
+        set(customKeyColor) = prefs.edit().putInt(CUSTOM_KEY_COLOR, customKeyColor).apply()
+
+    var enableLearning: Boolean
+        get() = prefs.getBoolean(ENABLE_LEARNING, true)
+        set(enableLearning) = prefs.edit().putBoolean(ENABLE_LEARNING, enableLearning).apply()
+
+    var enableTextPrediction: Boolean
+        get() = prefs.getBoolean(ENABLE_TEXT_PREDICTION, true)
+        set(enableTextPrediction) = prefs.edit().putBoolean(ENABLE_TEXT_PREDICTION, enableTextPrediction).apply()
+
+    var learnedKeyboardData: String
+        get() = prefs.getString(LEARNED_KEYBOARD_DATA, "")!!
+        set(learnedKeyboardData) = prefs.edit().putString(LEARNED_KEYBOARD_DATA, learnedKeyboardData).apply()
+
     var lastExportedClipsFolder: String
         get() = prefs.getString(LAST_EXPORTED_CLIPS_FOLDER, "")!!
         set(lastExportedClipsFolder) = prefs.edit().putString(LAST_EXPORTED_CLIPS_FOLDER, lastExportedClipsFolder).apply()
