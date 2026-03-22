@@ -32,6 +32,7 @@ import org.fossify.keyboard.extensions.getKeyboardLanguageText
 import org.fossify.keyboard.extensions.getKeyboardLanguagesRadioItems
 import org.fossify.keyboard.extensions.getVoiceInputMethods
 import org.fossify.keyboard.extensions.getVoiceInputRadioItems
+import org.fossify.keyboard.helpers.AMOLED_MODE
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_100_PERCENT
 import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_DEFAULT
 import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_EXPRESSIVE

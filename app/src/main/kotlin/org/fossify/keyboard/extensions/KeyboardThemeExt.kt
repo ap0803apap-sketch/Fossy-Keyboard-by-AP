@@ -73,6 +73,29 @@ fun Context.getKeyboardKeyColor(): Int {
     return if (config.useAmoledMode) ColorUtils.blendARGB(paletteColor, Color.WHITE, 0.12f) else paletteColor
 }
 
+fun Context.getKeyboardKeyColor(): Int {
+    val backgroundColor = getKeyboardBackgroundColor()
+    val paletteColor = when (config.keyboardPaletteStyle) {
+        KEYBOARD_PALETTE_TONAL_SPOT -> ColorUtils.blendARGB(getProperPrimaryColor(), backgroundColor, if (config.useAmoledMode) 0.42f else 0.58f)
+        KEYBOARD_PALETTE_EXPRESSIVE -> ColorUtils.blendARGB(baseConfig.accentColor, backgroundColor, if (config.useAmoledMode) 0.35f else 0.52f)
+        KEYBOARD_PALETTE_KEY_COLOR_ONLY -> if (config.customKeyColor != 0) config.customKeyColor else getProperPrimaryColor()
+        else -> {
+            val lighterColor = backgroundColor.lightenColor()
+            if (!isDynamicTheme() && backgroundColor == Color.BLACK) {
+                backgroundColor.getContrastColor().adjustAlpha(0.12f)
+            } else {
+                lighterColor
+            }
+        }
+    }
+
+    return if (config.useAmoledMode) {
+        ColorUtils.blendARGB(paletteColor, Color.WHITE, 0.12f)
+    } else {
+        paletteColor
+    }
+}
+
 fun Context.getStrokeColor(): Int {
     return if (config.useAmoledMode) {
         ColorUtils.blendARGB(Color.WHITE, Color.BLACK, 0.82f)
