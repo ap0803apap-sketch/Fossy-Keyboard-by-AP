@@ -21,6 +21,15 @@ const val SOUND_ALWAYS = 2
 const val SHOW_POPUP_ON_KEYPRESS = "show_popup_on_keypress"
 const val SHOW_KEY_BORDERS = "show_key_borders"
 const val SHOW_KEY_PRESS_ANIMATION = "show_key_press_animation"
+const val AMOLED_MODE = "amoled_mode"
+const val KEYBOARD_PALETTE_STYLE = "keyboard_palette_style"
+const val CUSTOM_KEY_COLOR = "custom_key_color"
+const val CUSTOM_KEYBOARD_BACKGROUND_COLOR = "custom_keyboard_background_color"
+const val CUSTOM_KEYBOARD_TEXT_COLOR = "custom_keyboard_text_color"
+const val CUSTOM_KEYBOARD_ACCENT_COLOR = "custom_keyboard_accent_color"
+const val ENABLE_LEARNING = "enable_learning"
+const val ENABLE_TEXT_PREDICTION = "enable_text_prediction"
+const val LEARNED_KEYBOARD_DATA = "learned_keyboard_data"
 const val SENTENCES_CAPITALIZATION = "sentences_capitalization"
 const val SHOW_EMOJI_KEY = "show_emoji_key"
 const val SHOW_LANGUAGE_SWITCH_KEY = "show_language_switch_key"
@@ -146,3 +155,8 @@ const val RECENT_EMOJIS_LIMIT = 36
 
 // Android constant
 const val INPUT_METHOD_SUBTYPE_VOICE = "voice"
+
+const val KEYBOARD_PALETTE_DEFAULT = 0
+const val KEYBOARD_PALETTE_TONAL_SPOT = 1
+const val KEYBOARD_PALETTE_EXPRESSIVE = 2
+const val KEYBOARD_PALETTE_CUSTOM = 3
