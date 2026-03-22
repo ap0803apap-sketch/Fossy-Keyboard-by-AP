@@ -29,6 +29,16 @@
     <string name="keycode_space">Spacebar</string>
     <!-- Settings -->
     <string name="layout_and_appearance">Layout &amp; appearance</string>
+    <string name="amoled_mode">AMOLED mode</string>
+    <string name="keyboard_palette_style">Keyboard palette style</string>
+    <string name="palette_style_default">Default palette</string>
+    <string name="palette_style_tonal_spot">Tonal spot</string>
+    <string name="palette_style_expressive">Expressive</string>
+    <string name="palette_style_key_only">Key color only</string>
+    <string name="customize_key_color">Customize key color</string>
+    <string name="key_color_hex_hint">#FF6200EE</string>
+    <string name="invalid_color_code">Enter a valid hex color</string>
+    <string name="key_color_updated">Key color updated</string>
     <string name="keypress">Keypress</string>
     <string name="typing_and_input">Typing &amp; input</string>
     <string name="show_clipboard_content">Show clipboard content if available</string>

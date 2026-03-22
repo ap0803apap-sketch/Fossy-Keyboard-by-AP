@@ -43,6 +43,17 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getBoolean(SHOW_KEY_PRESS_ANIMATION, true)
         set(showKeyPressAnimation) = prefs.edit().putBoolean(SHOW_KEY_PRESS_ANIMATION, showKeyPressAnimation).apply()
 
+    var useAmoledMode: Boolean
+        get() = prefs.getBoolean(AMOLED_MODE, false)
+        set(useAmoledMode) = prefs.edit().putBoolean(AMOLED_MODE, useAmoledMode).apply()
+
+    var keyboardPaletteStyle: Int
+        get() = prefs.getInt(KEYBOARD_PALETTE_STYLE, KEYBOARD_PALETTE_DEFAULT)
+        set(keyboardPaletteStyle) = prefs.edit().putInt(KEYBOARD_PALETTE_STYLE, keyboardPaletteStyle).apply()
+
+    var customKeyColor: Int
+        get() = prefs.getInt(CUSTOM_KEY_COLOR, 0)
+        set(customKeyColor) = prefs.edit().putInt(CUSTOM_KEY_COLOR, customKeyColor).apply()
 
     var enableLearning: Boolean
         get() = prefs.getBoolean(ENABLE_LEARNING, true)

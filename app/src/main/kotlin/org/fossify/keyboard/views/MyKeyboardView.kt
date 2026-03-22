@@ -83,6 +83,7 @@ import org.fossify.keyboard.extensions.config
 import org.fossify.keyboard.extensions.getCurrentClip
 import org.fossify.keyboard.extensions.getCurrentVoiceInputMethod
 import org.fossify.keyboard.extensions.getKeyboardBackgroundColor
+import org.fossify.keyboard.extensions.getKeyboardKeyColor
 import org.fossify.keyboard.extensions.getStrokeColor
 import org.fossify.keyboard.extensions.isDeviceLocked
 import org.fossify.keyboard.extensions.onScroll
@@ -94,6 +95,7 @@ import org.fossify.keyboard.helpers.KeyboardFeedbackManager
 import org.fossify.keyboard.helpers.LANGUAGE_TURKISH_Q
 import org.fossify.keyboard.helpers.LANGUAGE_VIETNAMESE_TELEX
 import org.fossify.keyboard.helpers.LANGUAGE_VN_TELEX
+import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_DEFAULT
 import org.fossify.keyboard.helpers.MAX_KEYS_PER_MINI_ROW
 import org.fossify.keyboard.helpers.MyKeyboard
 import org.fossify.keyboard.helpers.MyKeyboard.Companion.KEYCODE_DELETE
@@ -489,7 +491,8 @@ class MyKeyboardView @JvmOverloads constructor(
         val isMainKeyboard = changedView == null || changedView.id != R.id.mini_keyboard_view
         mKeyColor = getKeyColor()
         mKeyColorPressed = mKeyColor.adjustAlpha(0.2f)
-        mKeyBackground = if (mShowKeyBorders && isMainKeyboard) {
+        val shouldShowTintedKeys = isMainKeyboard && (mShowKeyBorders || context.config.useAmoledMode || context.config.keyboardPaletteStyle != KEYBOARD_PALETTE_DEFAULT)
+        mKeyBackground = if (shouldShowTintedKeys) {
             resources.getDrawable(R.drawable.keyboard_key_selector_outlined, context.theme)
         } else {
             resources.getDrawable(R.drawable.keyboard_key_selector, context.theme)
@@ -934,7 +937,7 @@ class MyKeyboardView @JvmOverloads constructor(
                 mPrimaryColor
             }
             keyBackground.applyColorFilter(keyColor)
-        } else if (mShowKeyBorders) {
+        } else {
             val keyColor = if (key.pressed) {
                 mKeyColorPressed
             } else {
@@ -2019,18 +2022,7 @@ class MyKeyboardView @JvmOverloads constructor(
     }
 
     private fun getKeyColor(): Int {
-        val backgroundColor = safeStorageContext.getKeyboardBackgroundColor()
-        val lighterColor = backgroundColor.lightenColor()
-        val keyColor = if (safeStorageContext.isDynamicTheme()) {
-            lighterColor
-        } else {
-            if (backgroundColor == Color.BLACK) {
-                backgroundColor.getContrastColor().adjustAlpha(0.1f)
-            } else {
-                lighterColor
-            }
-        }
-        return keyColor
+        return safeStorageContext.getKeyboardKeyColor()
     }
 
     @RequiresApi(Build.VERSION_CODES.R)

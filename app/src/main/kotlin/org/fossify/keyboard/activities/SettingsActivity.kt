@@ -3,7 +3,11 @@ package org.fossify.keyboard.activities
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.graphics.Color
+import android.text.InputType
+import android.widget.EditText
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import android.os.Bundle
 import org.fossify.commons.dialogs.FilePickerDialog
 import org.fossify.commons.dialogs.RadioGroupDialog
@@ -27,7 +31,13 @@ import org.fossify.keyboard.extensions.getKeyboardLanguageText
 import org.fossify.keyboard.extensions.getKeyboardLanguagesRadioItems
 import org.fossify.keyboard.extensions.getVoiceInputMethods
 import org.fossify.keyboard.extensions.getVoiceInputRadioItems
+import org.fossify.keyboard.helpers.AMOLED_MODE
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_100_PERCENT
+import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_DEFAULT
+import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_EXPRESSIVE
+import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_KEY_COLOR_ONLY
+import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_TONAL_SPOT
+import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_STYLE
 import org.fossify.keyboard.helpers.LearnedDataManager
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_120_PERCENT
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_140_PERCENT
@@ -71,6 +81,8 @@ class SettingsActivity : SimpleActivity() {
         setupSoundOnKeypress()
         setupShowPopupOnKeypress()
         setupShowKeyBorders()
+        setupAmoledMode()
+        setupKeyboardPaletteStyle()
         setupShowKeyPressAnimation()
         setupManageKeyboardLanguages()
         setupKeyboardLanguage()
@@ -105,8 +117,17 @@ class SettingsActivity : SimpleActivity() {
 
     private fun setupCustomizeColors() {
         binding.apply {
+            settingsColorCustomizationLabel.text = if (config.keyboardPaletteStyle == KEYBOARD_PALETTE_KEY_COLOR_ONLY) {
+                getString(R.string.customize_key_color)
+            } else {
+                getString(R.string.customize_colors)
+            }
             settingsColorCustomizationHolder.setOnClickListener {
-                startCustomizationActivity()
+                if (config.keyboardPaletteStyle == KEYBOARD_PALETTE_KEY_COLOR_ONLY) {
+                    showKeyColorDialog()
+                } else {
+                    startCustomizationActivity()
+                }
             }
         }
     }
@@ -212,6 +233,69 @@ class SettingsActivity : SimpleActivity() {
                 config.showKeyBorders = settingsShowKeyBorders.isChecked
             }
         }
+    }
+
+
+    private fun setupAmoledMode() {
+        binding.apply {
+            settingsAmoledMode.isChecked = config.useAmoledMode
+            settingsAmoledModeHolder.setOnClickListener {
+                settingsAmoledMode.toggle()
+                config.useAmoledMode = settingsAmoledMode.isChecked
+            }
+        }
+    }
+
+    private fun setupKeyboardPaletteStyle() {
+        binding.apply {
+            settingsKeyboardPaletteStyle.text = getKeyboardPaletteStyleText(config.keyboardPaletteStyle)
+            settingsKeyboardPaletteStyleHolder.setOnClickListener {
+                val items = arrayListOf(
+                    RadioItem(KEYBOARD_PALETTE_DEFAULT, getString(R.string.palette_style_default)),
+                    RadioItem(KEYBOARD_PALETTE_TONAL_SPOT, getString(R.string.palette_style_tonal_spot)),
+                    RadioItem(KEYBOARD_PALETTE_EXPRESSIVE, getString(R.string.palette_style_expressive)),
+                    RadioItem(KEYBOARD_PALETTE_KEY_COLOR_ONLY, getString(R.string.palette_style_key_only))
+                )
+                RadioGroupDialog(this@SettingsActivity, items, config.keyboardPaletteStyle) {
+                    config.keyboardPaletteStyle = it as Int
+                    settingsKeyboardPaletteStyle.text = getKeyboardPaletteStyleText(config.keyboardPaletteStyle)
+                    setupCustomizeColors()
+                }
+            }
+        }
+    }
+
+    private fun getKeyboardPaletteStyleText(style: Int): String = getString(
+        when (style) {
+            KEYBOARD_PALETTE_TONAL_SPOT -> R.string.palette_style_tonal_spot
+            KEYBOARD_PALETTE_EXPRESSIVE -> R.string.palette_style_expressive
+            KEYBOARD_PALETTE_KEY_COLOR_ONLY -> R.string.palette_style_key_only
+            else -> R.string.palette_style_default
+        }
+    )
+
+    private fun showKeyColorDialog() {
+        val input = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_TEXT
+            hint = getString(R.string.key_color_hex_hint)
+            setText(if (config.customKeyColor != 0) String.format("#%06X", 0xFFFFFF and config.customKeyColor) else "")
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.customize_key_color)
+            .setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val value = input.text.toString().trim().ifEmpty { return@setPositiveButton }
+                val normalized = if (value.startsWith("#")) value else "#$value"
+                try {
+                    config.customKeyColor = Color.parseColor(normalized)
+                    toast(R.string.key_color_updated)
+                } catch (_: IllegalArgumentException) {
+                    toast(R.string.invalid_color_code)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun setupShowKeyPressAnimation() {
