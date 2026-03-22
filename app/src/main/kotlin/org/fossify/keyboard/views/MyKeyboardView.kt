@@ -2,6 +2,7 @@ package org.fossify.keyboard.views
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -31,6 +32,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.animation.AccelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.view.inputmethod.EditorInfo
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -202,6 +204,10 @@ class MyKeyboardView @JvmOverloads constructor(
     private var mTopSmallNumberMarginHeight = 0f
     private val mSpaceMoveThreshold: Int
     private var ignoreTouches = false
+    private var animatedKeyIndex = NOT_A_KEY
+    private var animatedKeyScale = 1f
+    private var animatedKeyRippleProgress = 0f
+    private var keyPressAnimator: AnimatorSet? = null
 
     private var mKeyBackground: Drawable? = null
     private var mShowKeyBorders: Boolean = false
@@ -403,6 +409,16 @@ class MyKeyboardView @JvmOverloads constructor(
                 toggleClipboardVisibility(false)
             }
 
+            listOf(prediction1, prediction2, prediction3).forEach { predictionView ->
+                predictionView.setOnClickListener {
+                    val prediction = (it as TextView).text.toString()
+                    if (prediction.isNotBlank()) {
+                        vibrateIfNeeded()
+                        mOnKeyboardActionListener?.onPredictionSelected(prediction)
+                    }
+                }
+            }
+
             suggestionsHolder.addOnLayoutChangeListener(object : OnLayoutChangeListener {
                 override fun onLayoutChange(
                     v: View?,
@@ -530,6 +546,7 @@ class MyKeyboardView @JvmOverloads constructor(
             clipboardManagerLabel.setTextColor(mTextColor)
             clipboardContentPlaceholder1.setTextColor(mTextColor)
             clipboardContentPlaceholder2.setTextColor(mTextColor)
+            predictionHolder.children.filterIsInstance<TextView>().forEach { it.setTextColor(mTextColor) }
         }
 
         setupEmojiPalette(
@@ -551,6 +568,65 @@ class MyKeyboardView @JvmOverloads constructor(
 
     fun performKeypressFeedback(keyCode: Int) {
         feedbackManager.performKeypressFeedback(this, keyCode)
+        if (context.config.showKeyPressAnimation) {
+            animatePressedKey(if (mCurrentKey != NOT_A_KEY) mCurrentKey else mKeys.indexOfFirst { it.code == keyCode })
+        }
+    }
+
+    fun showPredictions(predictions: List<String>) {
+        keyboardViewBinding?.apply {
+            val views = listOf(prediction1, prediction2, prediction3)
+            val separators = listOf(predictionSeparator1, predictionSeparator2)
+            val hasPredictions = predictions.isNotEmpty() && context.config.enableTextPrediction
+
+            predictionHolder.beVisibleIf(hasPredictions)
+            clipboardValue.beGoneIf(hasPredictions)
+            clipboardClear.beGoneIf(hasPredictions)
+
+            views.forEachIndexed { index, textView ->
+                val text = predictions.getOrNull(index).orEmpty()
+                textView.text = text
+                textView.beVisibleIf(text.isNotEmpty())
+            }
+
+            separators[0].beVisibleIf(predictions.getOrNull(0).isNullOrEmpty().not() && predictions.getOrNull(1).isNullOrEmpty().not())
+            separators[1].beVisibleIf(predictions.getOrNull(1).isNullOrEmpty().not() && predictions.getOrNull(2).isNullOrEmpty().not())
+            updateSuggestionsToolbarLayout()
+        }
+    }
+
+    private fun animatePressedKey(keyIndex: Int) {
+        if (keyIndex == NOT_A_KEY || keyIndex >= mKeys.size) return
+        keyPressAnimator?.cancel()
+        animatedKeyIndex = keyIndex
+
+        val scaleAnimator = ValueAnimator.ofFloat(0.96f, 1f).apply {
+            duration = 180
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                animatedKeyScale = it.animatedValue as Float
+                invalidateKey(animatedKeyIndex)
+            }
+        }
+        val rippleAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 220
+            interpolator = AccelerateInterpolator()
+            addUpdateListener {
+                animatedKeyRippleProgress = it.animatedValue as Float
+                invalidateKey(animatedKeyIndex)
+            }
+        }
+
+        keyPressAnimator = AnimatorSet().apply {
+            playTogether(scaleAnimator, rippleAnimator)
+            doOnEnd {
+                animatedKeyIndex = NOT_A_KEY
+                animatedKeyScale = 1f
+                animatedKeyRippleProgress = 0f
+                invalidateAllKeys()
+            }
+            start()
+        }
     }
 
     fun performHapticHandleMove() {
@@ -687,8 +763,11 @@ class MyKeyboardView @JvmOverloads constructor(
             val key = keys[i]
             val code = key.code
             val label = adjustCase(key.label)?.toString()
-
-            setupKeyBackground(key, code, canvas)
+            canvas.save()
+            setupKeyBackground(key, code, canvas, i == animatedKeyIndex)
+            if (i == animatedKeyIndex) {
+                drawKeyPressRipple(key, canvas)
+            }
             val textColor = when {
                 key.pressed -> mTextColor.adjustAlpha(0.5f)
                 code == KEYCODE_SPACE && label.orEmpty().length > 1 -> mTextColor.adjustAlpha(HIGHER_ALPHA)
@@ -816,7 +895,7 @@ class MyKeyboardView @JvmOverloads constructor(
                     canvas.translate(-drawableX.toFloat(), -drawableY.toFloat())
                 }
             }
-            canvas.translate(-key.x.toFloat(), -key.y.toFloat())
+            canvas.restore()
         }
 
         // Overlay a dark rectangle to dim the keyboard
@@ -830,7 +909,7 @@ class MyKeyboardView @JvmOverloads constructor(
         mDirtyRect.setEmpty()
     }
 
-    private fun setupKeyBackground(key: MyKeyboard.Key, keyCode: Int, canvas: Canvas) {
+    private fun setupKeyBackground(key: MyKeyboard.Key, keyCode: Int, canvas: Canvas, applyScaleAnimation: Boolean) {
         val keyBackground = when {
             keyCode == KEYCODE_SPACE && key.label.length > 1 -> getSpaceKeyBackground()
             keyCode == KEYCODE_ENTER -> getEnterKeyBackground()
@@ -866,7 +945,18 @@ class MyKeyboardView @JvmOverloads constructor(
         }
 
         canvas.translate(key.x.toFloat(), key.y.toFloat())
+        if (applyScaleAnimation) {
+            canvas.scale(animatedKeyScale, animatedKeyScale, key.width / 2f, key.height / 2f)
+        }
         keyBackground.draw(canvas)
+    }
+
+    private fun drawKeyPressRipple(key: MyKeyboard.Key, canvas: Canvas) {
+        val ripplePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = mPrimaryColor.adjustAlpha((0.18f * (1f - animatedKeyRippleProgress)).coerceAtLeast(0f))
+        }
+        val radius = (minOf(key.width, key.height) * 0.2f) + (maxOf(key.width, key.height) * 0.45f * animatedKeyRippleProgress)
+        canvas.drawCircle(key.width / 2f, key.height / 2f, radius, ripplePaint)
     }
 
     private fun getSpaceKeyBackground(): Drawable? {

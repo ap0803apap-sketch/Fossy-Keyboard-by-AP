@@ -1,14 +1,21 @@
 package org.fossify.keyboard.activities
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.widget.Toast
 import android.os.Bundle
+import org.fossify.commons.dialogs.FilePickerDialog
 import org.fossify.commons.dialogs.RadioGroupDialog
 import org.fossify.commons.extensions.beVisibleIf
+import org.fossify.commons.extensions.handlePermission
 import org.fossify.commons.extensions.getProperPrimaryColor
 import org.fossify.commons.extensions.toast
 import org.fossify.commons.extensions.updateTextColors
 import org.fossify.commons.extensions.viewBinding
 import org.fossify.commons.helpers.NavigationIcon
+import org.fossify.commons.helpers.PERMISSION_READ_STORAGE
+import org.fossify.commons.helpers.isQPlus
 import org.fossify.commons.helpers.isTiramisuPlus
 import org.fossify.commons.models.RadioItem
 import org.fossify.keyboard.R
@@ -21,6 +28,7 @@ import org.fossify.keyboard.extensions.getKeyboardLanguagesRadioItems
 import org.fossify.keyboard.extensions.getVoiceInputMethods
 import org.fossify.keyboard.extensions.getVoiceInputRadioItems
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_100_PERCENT
+import org.fossify.keyboard.helpers.LearnedDataManager
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_120_PERCENT
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_140_PERCENT
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_160_PERCENT
@@ -34,7 +42,12 @@ import java.util.Locale
 import kotlin.system.exitProcess
 
 class SettingsActivity : SimpleActivity() {
+    companion object {
+        private const val PICK_IMPORT_LEARNED_DATA_INTENT = 41
+    }
+
     private val binding by viewBinding(ActivitySettingsBinding::inflate)
+    private val learnedDataManager by lazy { LearnedDataManager(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,7 +81,11 @@ class SettingsActivity : SimpleActivity() {
         setupShowClipboardContent()
         setupSentencesCapitalization()
         setupShowNumbersRow()
+        setupEnableLearning()
+        setupEnableTextPrediction()
         setupVoiceInputMethod()
+        setupExportLearnedData()
+        setupImportLearnedData()
 
         binding.apply {
             updateTextColors(settingsNestedScrollview)
@@ -113,6 +130,20 @@ class SettingsActivity : SimpleActivity() {
             settingsLanguageHolder.setOnClickListener {
                 launchChangeAppLanguageIntent()
             }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, resultData: Intent?) {
+        super.onActivityResult(requestCode, resultCode, resultData)
+        if (requestCode == PICK_IMPORT_LEARNED_DATA_INTENT && resultCode == Activity.RESULT_OK && resultData?.data != null) {
+            contentResolver.openInputStream(resultData.data!!)?.use { inputStream ->
+                try {
+                    learnedDataManager.replaceFromImport(inputStream)
+                    toast(R.string.learned_keyboard_data_imported)
+                } catch (e: Exception) {
+                    showErrorToast(e)
+                }
+            } ?: toast(R.string.unknown_error_occurred)
         }
     }
 
@@ -293,6 +324,56 @@ class SettingsActivity : SimpleActivity() {
         }
     }
 
+    private fun setupExportLearnedData() {
+        binding.settingsExportLearnedDataHolder.setOnClickListener {
+            try {
+                if (learnedDataManager.getLearnedWords().isEmpty()) {
+                    toast(R.string.no_learned_keyboard_data)
+                } else {
+                    learnedDataManager.exportToDownloads()
+                    toast(R.string.learned_keyboard_data_exported)
+                }
+            } catch (e: Exception) {
+                showErrorToast(e)
+            }
+        }
+    }
+
+    private fun setupImportLearnedData() {
+        binding.settingsImportLearnedDataHolder.setOnClickListener {
+            importLearnedData()
+        }
+    }
+
+    private fun importLearnedData() {
+        if (isQPlus()) {
+            Intent(Intent.ACTION_GET_CONTENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "*/*"
+                try {
+                    startActivityForResult(this, PICK_IMPORT_LEARNED_DATA_INTENT)
+                } catch (e: ActivityNotFoundException) {
+                    toast(R.string.system_service_disabled, Toast.LENGTH_LONG)
+                } catch (e: Exception) {
+                    showErrorToast(e)
+                }
+            }
+        } else {
+            handlePermission(PERMISSION_READ_STORAGE) { granted ->
+                if (granted) {
+                    FilePickerDialog(this) { path ->
+                        try {
+                            learnedDataManager.replaceFromImport(java.io.File(path).inputStream())
+                            toast(R.string.learned_keyboard_data_imported)
+                        } catch (e: Exception) {
+                            showErrorToast(e)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private fun setupShowEmojiKey() {
         binding.apply {
             settingsShowEmojiKeyHolder.setOnClickListener {
@@ -327,6 +408,27 @@ class SettingsActivity : SimpleActivity() {
             settingsShowNumbersRowHolder.setOnClickListener {
                 settingsShowNumbersRow.toggle()
                 config.showNumbersRow = settingsShowNumbersRow.isChecked
+            }
+        }
+    }
+
+
+    private fun setupEnableLearning() {
+        binding.apply {
+            settingsEnableLearning.isChecked = config.enableLearning
+            settingsEnableLearningHolder.setOnClickListener {
+                settingsEnableLearning.toggle()
+                config.enableLearning = settingsEnableLearning.isChecked
+            }
+        }
+    }
+
+    private fun setupEnableTextPrediction() {
+        binding.apply {
+            settingsEnableTextPrediction.isChecked = config.enableTextPrediction
+            settingsEnableTextPredictionHolder.setOnClickListener {
+                settingsEnableTextPrediction.toggle()
+                config.enableTextPrediction = settingsEnableTextPrediction.isChecked
             }
         }
     }

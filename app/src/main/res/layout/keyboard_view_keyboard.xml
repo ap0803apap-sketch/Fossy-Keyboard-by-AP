@@ -45,6 +45,68 @@
                 android:gravity="center_horizontal"
                 android:orientation="horizontal">
 
+                <LinearLayout
+                    android:id="@+id/prediction_holder"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/prediction_1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:gravity="center"
+                        android:maxLines="1"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:textSize="@dimen/label_text_size"
+                        tools:text="hello" />
+
+                    <TextView
+                        android:id="@+id/prediction_separator_1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="|"
+                        android:textSize="@dimen/label_text_size"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/prediction_2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:gravity="center"
+                        android:maxLines="1"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:textSize="@dimen/label_text_size"
+                        tools:text="help" />
+
+                    <TextView
+                        android:id="@+id/prediction_separator_2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="|"
+                        android:textSize="@dimen/label_text_size"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/prediction_3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:gravity="center"
+                        android:maxLines="1"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:textSize="@dimen/label_text_size"
+                        tools:text="held" />
+
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/clipboard_value"
                     android:layout_width="wrap_content"

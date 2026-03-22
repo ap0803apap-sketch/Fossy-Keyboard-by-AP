@@ -32,6 +32,13 @@
     <string name="keypress">Keypress</string>
     <string name="typing_and_input">Typing &amp; input</string>
     <string name="show_clipboard_content">Show clipboard content if available</string>
+    <string name="enable_learning">Enable learning</string>
+    <string name="enable_text_prediction">Enable text prediction</string>
+    <string name="export_learned_keyboard_data">Export learned keyboard data</string>
+    <string name="import_learned_keyboard_data">Import learned keyboard data</string>
+    <string name="learned_keyboard_data_exported">Learned keyboard data exported successfully</string>
+    <string name="learned_keyboard_data_imported">Learned keyboard data imported successfully</string>
+    <string name="no_learned_keyboard_data">No learned keyboard data available</string>
     <string name="show_popup">Show a popup on keypress</string>
     <string name="vibrate_on_keypress">Vibrate on keypress</string>
     <string name="sound_on_keypress">Sound on keypress</string>
