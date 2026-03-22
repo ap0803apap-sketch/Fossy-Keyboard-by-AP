@@ -380,6 +380,36 @@
             </RelativeLayout>
 
             <RelativeLayout
+                android:id="@+id/settings_enable_learning_holder"
+                style="@style/SettingsHolderSwitchStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <org.fossify.commons.views.MyMaterialSwitch
+                    android:id="@+id/settings_enable_learning"
+                    style="@style/SettingsSwitchStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/enable_learning" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/settings_enable_text_prediction_holder"
+                style="@style/SettingsHolderSwitchStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <org.fossify.commons.views.MyMaterialSwitch
+                    android:id="@+id/settings_enable_text_prediction"
+                    style="@style/SettingsSwitchStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/enable_text_prediction" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
                 android:id="@+id/settings_voice_input_method_holder"
                 style="@style/SettingsHolderTextViewStyle"
                 android:layout_width="match_parent"
@@ -399,6 +429,36 @@
                     android:layout_height="wrap_content"
                     android:layout_below="@+id/settings_voice_input_method"
                     tools:text="@string/none" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/settings_export_learned_data_holder"
+                style="@style/SettingsHolderTextViewOneLinerStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/settings_export_learned_data_label"
+                    style="@style/SettingsTextLabelStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/export_learned_keyboard_data" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/settings_import_learned_data_holder"
+                style="@style/SettingsHolderTextViewOneLinerStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/settings_import_learned_data_label"
+                    style="@style/SettingsTextLabelStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/import_learned_keyboard_data" />
 
             </RelativeLayout>
 

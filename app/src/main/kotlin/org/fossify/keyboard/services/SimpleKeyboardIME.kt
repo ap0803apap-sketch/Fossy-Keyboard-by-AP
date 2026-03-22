@@ -74,8 +74,10 @@ import org.fossify.keyboard.extensions.getSelectedLanguagesSorted
 import org.fossify.keyboard.extensions.getStrokeColor
 import org.fossify.keyboard.extensions.safeStorageContext
 import org.fossify.keyboard.helpers.HEIGHT_PERCENTAGE
+import org.fossify.keyboard.helpers.LearnedDataManager
 import org.fossify.keyboard.helpers.KEYBOARD_LANGUAGE
 import org.fossify.keyboard.helpers.KEY_SPACING
+import org.fossify.keyboard.helpers.LEARNED_KEYBOARD_DATA
 import org.fossify.keyboard.helpers.LANGUAGE_ARABIC
 import org.fossify.keyboard.helpers.LANGUAGE_BELARUSIAN_CYRL
 import org.fossify.keyboard.helpers.LANGUAGE_BELARUSIAN_LATN
@@ -119,6 +121,8 @@ import org.fossify.keyboard.helpers.LANGUAGE_TURKISH
 import org.fossify.keyboard.helpers.LANGUAGE_TURKISH_Q
 import org.fossify.keyboard.helpers.LANGUAGE_UKRAINIAN
 import org.fossify.keyboard.helpers.MyKeyboard
+import org.fossify.keyboard.helpers.ENABLE_LEARNING
+import org.fossify.keyboard.helpers.ENABLE_TEXT_PREDICTION
 import org.fossify.keyboard.helpers.SHOW_KEY_BORDERS
 import org.fossify.keyboard.helpers.SHOW_NUMBERS_ROW
 import org.fossify.keyboard.helpers.ShiftState
@@ -156,6 +160,7 @@ class SimpleKeyboardIME : InputMethodService(), OnKeyboardActionListener, Shared
     private var breakIterator: BreakIterator? = null
 
     private lateinit var binding: KeyboardViewKeyboardBinding
+    private val learnedDataManager by lazy { LearnedDataManager(this) }
 
     override fun onInitializeInterface() {
         super.onInitializeInterface()
@@ -178,6 +183,7 @@ class SimpleKeyboardIME : InputMethodService(), OnKeyboardActionListener, Shared
     override fun onStartInputView(editorInfo: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(editorInfo, restarting)
         updateBackgroundColors()
+        updatePredictionSuggestions()
         binding.keyboardHolder.post {
             ViewCompat.requestApplyInsets(binding.keyboardHolder)
         }
@@ -201,6 +207,7 @@ class SimpleKeyboardIME : InputMethodService(), OnKeyboardActionListener, Shared
             breakIterator = BreakIterator.getCharacterInstance(ULocale.getDefault())
         }
         updateShiftKeyState()
+        updatePredictionSuggestions()
     }
 
     private fun updateShiftKeyState() {
@@ -271,6 +278,7 @@ class SimpleKeyboardIME : InputMethodService(), OnKeyboardActionListener, Shared
                 } else {
                     inputConnection.commitText("", 1)
                 }
+                updatePredictionSuggestions()
             }
 
             MyKeyboard.KEYCODE_SHIFT -> {
@@ -305,6 +313,8 @@ class SimpleKeyboardIME : InputMethodService(), OnKeyboardActionListener, Shared
                     inputConnection.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
                     inputConnection.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
                 }
+                maybeLearnFromContext()
+                updatePredictionSuggestions()
             }
 
             MyKeyboard.KEYCODE_SYMBOLS_MODE_CHANGE -> {
@@ -375,6 +385,10 @@ class SimpleKeyboardIME : InputMethodService(), OnKeyboardActionListener, Shared
                     if (originalText != newText) {
                         switchToLetters = keyboardMode != KEYBOARD_SYMBOLS_ALT
                     }
+                    if (codeChar.isWhitespace()) {
+                        maybeLearnFromContext()
+                    }
+                    updatePredictionSuggestions()
                 } else {
                     when {
                         !originalText.isNullOrEmpty() && cachedVNTelexData.isNotEmpty() -> {
@@ -397,13 +411,21 @@ class SimpleKeyboardIME : InputMethodService(), OnKeyboardActionListener, Shared
                                     }
                                 }
                                 inputConnection.commitText(codeChar.toString(), 1)
+                                if (!codeChar.isLetterOrDigit()) {
+                                    maybeLearnFromContext()
+                                }
                                 updateShiftKeyState()
+                                updatePredictionSuggestions()
                             }
                         }
 
                         else -> {
                             inputConnection.commitText(codeChar.toString(), 1)
+                            if (!codeChar.isLetterOrDigit()) {
+                                maybeLearnFromContext()
+                            }
                             updateShiftKeyState()
+                            updatePredictionSuggestions()
                         }
                     }
                 }
@@ -460,6 +482,20 @@ class SimpleKeyboardIME : InputMethodService(), OnKeyboardActionListener, Shared
 
     override fun onText(text: String) {
         currentInputConnection?.commitText(text, 1)
+        updatePredictionSuggestions()
+    }
+
+    override fun onPredictionSelected(prediction: String) {
+        val inputConnection = currentInputConnection ?: return
+        val prefix = getCurrentWordPrefix()
+        if (prefix.isNotEmpty()) {
+            inputConnection.deleteSurroundingText(prefix.length, 0)
+        }
+        inputConnection.commitText("$prediction ", 1)
+        if (config.enableLearning) {
+            learnedDataManager.recordWord(prediction)
+        }
+        updatePredictionSuggestions()
     }
 
     override fun reloadKeyboard() {
@@ -507,11 +543,13 @@ class SimpleKeyboardIME : InputMethodService(), OnKeyboardActionListener, Shared
             keyboardView?.closeClipboardManager()
         }
         updateShiftKeyState()
+        updatePredictionSuggestions()
     }
 
     override fun onUpdateCursorAnchorInfo(cursorAnchorInfo: CursorAnchorInfo?) {
         super.onUpdateCursorAnchorInfo(cursorAnchorInfo)
         updateShiftKeyState()
+        updatePredictionSuggestions()
     }
 
     private fun moveCursor(moveRight: Boolean) {
@@ -536,6 +574,43 @@ class SimpleKeyboardIME : InputMethodService(), OnKeyboardActionListener, Shared
             IME_ACTION_NONE
         } else {
             currentInputEditorInfo.imeOptions and IME_MASK_ACTION
+        }
+    }
+
+    private fun updatePredictionSuggestions() {
+        if (!::binding.isInitialized) {
+            return
+        }
+
+        if (!config.enableTextPrediction || inputTypeClass != TYPE_CLASS_TEXT) {
+            keyboardView?.showPredictions(emptyList())
+            return
+        }
+
+        keyboardView?.showPredictions(learnedDataManager.getPredictions(getCurrentWordPrefix()))
+    }
+
+    private fun getCurrentWordPrefix(): String {
+        return currentInputConnection
+            ?.getTextBeforeCursor(64, 0)
+            ?.toString()
+            ?.takeLastWhile { it.isLetterOrDigit() }
+            .orEmpty()
+            .lowercase(Locale.getDefault())
+    }
+
+    private fun maybeLearnFromContext() {
+        if (!config.enableLearning || inputTypeClass != TYPE_CLASS_TEXT) {
+            return
+        }
+
+        val recentText = currentInputConnection?.getTextBeforeCursor(64, 0)?.toString().orEmpty()
+        val previousWord = recentText
+            .dropLastWhile { !it.isLetterOrDigit() }
+            .takeLastWhile { it.isLetterOrDigit() }
+
+        if (previousWord.isNotEmpty()) {
+            learnedDataManager.recordWord(previousWord)
         }
     }
 
@@ -641,6 +716,7 @@ class SimpleKeyboardIME : InputMethodService(), OnKeyboardActionListener, Shared
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         if (key != null && key in arrayOf(
+                ENABLE_LEARNING, ENABLE_TEXT_PREDICTION, LEARNED_KEYBOARD_DATA,
                 SHOW_KEY_BORDERS, KEYBOARD_LANGUAGE, HEIGHT_PERCENTAGE, KEY_SPACING, SHOW_NUMBERS_ROW, VOICE_INPUT_METHOD,
                 TEXT_COLOR, BACKGROUND_COLOR, PRIMARY_COLOR, ACCENT_COLOR, CUSTOM_TEXT_COLOR, CUSTOM_BACKGROUND_COLOR,
                 CUSTOM_PRIMARY_COLOR, CUSTOM_ACCENT_COLOR, IS_GLOBAL_THEME_ENABLED, IS_SYSTEM_THEME_ENABLED
@@ -650,6 +726,7 @@ class SimpleKeyboardIME : InputMethodService(), OnKeyboardActionListener, Shared
                 if (key in arrayOf(KEYBOARD_LANGUAGE, HEIGHT_PERCENTAGE, KEY_SPACING, SHOW_NUMBERS_ROW)) {
                     reloadKeyboard()
                 }
+                updatePredictionSuggestions()
                 keyboardView?.setupKeyboard()
                 updateBackgroundColors()
             }
