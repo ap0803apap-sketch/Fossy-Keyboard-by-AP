@@ -35,7 +35,9 @@
     <string name="palette_style_tonal_spot">Tonal spot</string>
     <string name="palette_style_expressive">Expressive</string>
     <string name="palette_style_custom">Custom palette</string>
-    <string name="customize_key_color">Customize palette colors</string>
+    <string name="palette_style_key_only">Key color only</string>
+    <string name="customize_key_color">Customize key color</string>
+    <string name="customize_colors">Customize colors</string>
     <string name="key_color_hex_hint">#FF6200EE</string>
     <string name="invalid_color_code">Enter a valid hex color</string>
     <string name="custom_palette_required">Choose Custom palette to edit colors</string>

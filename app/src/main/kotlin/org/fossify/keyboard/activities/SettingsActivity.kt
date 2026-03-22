@@ -1,25 +1,28 @@
 package org.fossify.keyboard.activities
 
+import android.Manifest
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.Color
+import android.os.Build
+import android.os.Bundle
 import android.text.InputType
 import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
-import android.os.Bundle
+import androidx.core.graphics.toColorInt
 import org.fossify.commons.dialogs.FilePickerDialog
 import org.fossify.commons.dialogs.RadioGroupDialog
 import org.fossify.commons.extensions.beVisibleIf
-import org.fossify.commons.extensions.handlePermission
 import org.fossify.commons.extensions.getProperPrimaryColor
+import org.fossify.commons.extensions.showErrorToast
 import org.fossify.commons.extensions.toast
 import org.fossify.commons.extensions.updateTextColors
 import org.fossify.commons.extensions.viewBinding
 import org.fossify.commons.helpers.NavigationIcon
-import org.fossify.commons.helpers.PERMISSION_READ_STORAGE
 import org.fossify.commons.helpers.isQPlus
 import org.fossify.commons.helpers.isTiramisuPlus
 import org.fossify.commons.models.RadioItem
@@ -34,17 +37,18 @@ import org.fossify.keyboard.extensions.getVoiceInputMethods
 import org.fossify.keyboard.extensions.getVoiceInputRadioItems
 import org.fossify.keyboard.helpers.AMOLED_MODE
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_100_PERCENT
-import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_DEFAULT
-import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_EXPRESSIVE
-import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_CUSTOM
-import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_TONAL_SPOT
-import org.fossify.keyboard.helpers.LearnedDataManager
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_120_PERCENT
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_140_PERCENT
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_160_PERCENT
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_70_PERCENT
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_80_PERCENT
 import org.fossify.keyboard.helpers.KEYBOARD_HEIGHT_90_PERCENT
+import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_DEFAULT
+import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_EXPRESSIVE
+import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_KEY_COLOR_ONLY
+import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_STYLE
+import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_TONAL_SPOT
+import org.fossify.keyboard.helpers.LearnedDataManager
 import org.fossify.keyboard.helpers.SOUND_ALWAYS
 import org.fossify.keyboard.helpers.SOUND_NONE
 import org.fossify.keyboard.helpers.SOUND_SYSTEM
@@ -52,12 +56,40 @@ import java.util.Locale
 import kotlin.system.exitProcess
 
 class SettingsActivity : SimpleActivity() {
-    companion object {
-        private const val PICK_IMPORT_LEARNED_DATA_INTENT = 41
-    }
 
     private val binding by viewBinding(ActivitySettingsBinding::inflate)
     private val learnedDataManager by lazy { LearnedDataManager(this) }
+
+    // Modern Activity Result API (replaces deprecated startActivityForResult)
+    private val importLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data?.data != null) {
+            try {
+                contentResolver.openInputStream(result.data!!.data!!)?.use { inputStream ->
+                    learnedDataManager.replaceFromImport(inputStream)
+                    toast(R.string.learned_keyboard_data_imported)
+                }
+            } catch (e: Exception) {
+                showErrorToast(e)
+            }
+        }
+    }
+
+    private val storagePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            FilePickerDialog(this) { path ->
+                try {
+                    learnedDataManager.replaceFromImport(java.io.File(path).inputStream())
+                    toast(R.string.learned_keyboard_data_imported)
+                } catch (e: Exception) {
+                    showErrorToast(e)
+                }
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,7 +97,7 @@ class SettingsActivity : SimpleActivity() {
 
         binding.apply {
             setupEdgeToEdge(padBottomSystem = listOf(settingsNestedScrollview))
-            setupMaterialScrollListener(binding.settingsNestedScrollview, binding.settingsAppbar)
+            setupMaterialScrollListener(settingsNestedScrollview, settingsAppbar)
         }
     }
 
@@ -75,7 +107,12 @@ class SettingsActivity : SimpleActivity() {
 
         setupCustomizeColors()
         setupUseEnglish()
-        setupLanguage()
+
+        // FIX: API safe call
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            setupLanguage()
+        }
+
         setupManageClipboardItems()
         setupVibrateOnKeypress()
         setupSoundOnKeypress()
@@ -117,12 +154,16 @@ class SettingsActivity : SimpleActivity() {
 
     private fun setupCustomizeColors() {
         binding.apply {
-            settingsColorCustomizationLabel.text = getString(R.string.customize_key_color)
+            settingsColorCustomizationLabel.text = if (config.keyboardPaletteStyle == KEYBOARD_PALETTE_KEY_COLOR_ONLY) {
+                getString(R.string.customize_key_color)
+            } else {
+                getString(R.string.customize_colors)
+            }
             settingsColorCustomizationHolder.setOnClickListener {
-                if (config.keyboardPaletteStyle == KEYBOARD_PALETTE_CUSTOM) {
+                if (config.keyboardPaletteStyle == KEYBOARD_PALETTE_KEY_COLOR_ONLY) {
                     showKeyColorDialog()
                 } else {
-                    toast(R.string.custom_palette_required)
+                    startCustomizationActivity()
                 }
             }
         }
@@ -140,6 +181,7 @@ class SettingsActivity : SimpleActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun setupLanguage() {
         binding.apply {
             settingsLanguage.text = Locale.getDefault().displayLanguage
@@ -147,20 +189,6 @@ class SettingsActivity : SimpleActivity() {
             settingsLanguageHolder.setOnClickListener {
                 launchChangeAppLanguageIntent()
             }
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, resultData: Intent?) {
-        super.onActivityResult(requestCode, resultCode, resultData)
-        if (requestCode == PICK_IMPORT_LEARNED_DATA_INTENT && resultCode == Activity.RESULT_OK && resultData?.data != null) {
-            contentResolver.openInputStream(resultData.data!!)?.use { inputStream ->
-                try {
-                    learnedDataManager.replaceFromImport(inputStream)
-                    toast(R.string.learned_keyboard_data_imported)
-                } catch (e: Exception) {
-                    showErrorToast(e)
-                }
-            } ?: toast(R.string.unknown_error_occurred)
         }
     }
 
@@ -231,7 +259,6 @@ class SettingsActivity : SimpleActivity() {
         }
     }
 
-
     private fun setupAmoledMode() {
         binding.apply {
             settingsAmoledMode.isChecked = config.useAmoledMode
@@ -250,7 +277,7 @@ class SettingsActivity : SimpleActivity() {
                     RadioItem(KEYBOARD_PALETTE_DEFAULT, getString(R.string.palette_style_default)),
                     RadioItem(KEYBOARD_PALETTE_TONAL_SPOT, getString(R.string.palette_style_tonal_spot)),
                     RadioItem(KEYBOARD_PALETTE_EXPRESSIVE, getString(R.string.palette_style_expressive)),
-                    RadioItem(KEYBOARD_PALETTE_CUSTOM, getString(R.string.palette_style_custom))
+                    RadioItem(KEYBOARD_PALETTE_KEY_COLOR_ONLY, getString(R.string.palette_style_custom))
                 )
                 RadioGroupDialog(this@SettingsActivity, items, config.keyboardPaletteStyle) {
                     config.keyboardPaletteStyle = it as Int
@@ -265,41 +292,29 @@ class SettingsActivity : SimpleActivity() {
         when (style) {
             KEYBOARD_PALETTE_TONAL_SPOT -> R.string.palette_style_tonal_spot
             KEYBOARD_PALETTE_EXPRESSIVE -> R.string.palette_style_expressive
-            KEYBOARD_PALETTE_CUSTOM -> R.string.palette_style_custom
+            KEYBOARD_PALETTE_KEY_COLOR_ONLY -> R.string.palette_style_custom
             else -> R.string.palette_style_default
         }
     )
 
     private fun showKeyColorDialog() {
-        val holder = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            val padding = resources.getDimensionPixelSize(R.dimen.activity_margin)
-            setPadding(padding, padding, padding, 0)
+        val input = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_TEXT
+            hint = getString(R.string.key_color_hex_hint)
+            setText(if (config.customKeyColor != 0) String.format("#%06X", 0xFFFFFF and config.customKeyColor) else "")
         }
-
-        fun createField(labelRes: Int, currentColor: Int): EditText {
-            return EditText(this).apply {
-                inputType = InputType.TYPE_CLASS_TEXT
-                hint = getString(labelRes)
-                setText(if (currentColor != 0) String.format("#%08X", currentColor) else "")
-                holder.addView(this)
-            }
-        }
-
-        val backgroundField = createField(R.string.palette_background, config.customKeyboardBackgroundColor)
-        val keyField = createField(R.string.palette_key, config.customKeyColor)
-        val accentField = createField(R.string.palette_accent, config.customKeyboardAccentColor)
-        val textField = createField(R.string.palette_text, config.customKeyboardTextColor)
 
         AlertDialog.Builder(this)
             .setTitle(R.string.customize_key_color)
-            .setView(holder)
+            .setView(input)
             .setPositiveButton(android.R.string.ok) { _, _ ->
+                val value = input.text.toString().trim()
+                if (value.isEmpty()) return@setPositiveButton
+
+                val normalized = if (value.startsWith("#")) value else "#$value"
+
                 try {
-                    config.customKeyboardBackgroundColor = parseColorInput(backgroundField, config.customKeyboardBackgroundColor)
-                    config.customKeyColor = parseColorInput(keyField, config.customKeyColor)
-                    config.customKeyboardAccentColor = parseColorInput(accentField, config.customKeyboardAccentColor)
-                    config.customKeyboardTextColor = parseColorInput(textField, config.customKeyboardTextColor)
+                    config.customKeyColor = normalized.toColorInt()
                     toast(R.string.key_color_updated)
                 } catch (_: IllegalArgumentException) {
                     toast(R.string.invalid_color_code)
@@ -307,13 +322,6 @@ class SettingsActivity : SimpleActivity() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
-    }
-
-    private fun parseColorInput(field: EditText, fallback: Int): Int {
-        val value = field.text.toString().trim()
-        if (value.isEmpty()) return fallback
-        val normalized = if (value.startsWith("#")) value else "#$value"
-        return Color.parseColor(normalized)
     }
 
     private fun setupShowKeyPressAnimation() {
@@ -453,7 +461,7 @@ class SettingsActivity : SimpleActivity() {
                 addCategory(Intent.CATEGORY_OPENABLE)
                 type = "*/*"
                 try {
-                    startActivityForResult(this, PICK_IMPORT_LEARNED_DATA_INTENT)
+                    importLauncher.launch(this)
                 } catch (e: ActivityNotFoundException) {
                     toast(R.string.system_service_disabled, Toast.LENGTH_LONG)
                 } catch (e: Exception) {
@@ -461,18 +469,7 @@ class SettingsActivity : SimpleActivity() {
                 }
             }
         } else {
-            handlePermission(PERMISSION_READ_STORAGE) { granted ->
-                if (granted) {
-                    FilePickerDialog(this) { path ->
-                        try {
-                            learnedDataManager.replaceFromImport(java.io.File(path).inputStream())
-                            toast(R.string.learned_keyboard_data_imported)
-                        } catch (e: Exception) {
-                            showErrorToast(e)
-                        }
-                    }
-                }
-            }
+            storagePermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
     }
 
@@ -513,7 +510,6 @@ class SettingsActivity : SimpleActivity() {
             }
         }
     }
-
 
     private fun setupEnableLearning() {
         binding.apply {

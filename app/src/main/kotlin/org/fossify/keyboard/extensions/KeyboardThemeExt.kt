@@ -15,12 +15,13 @@ import org.fossify.commons.extensions.isSystemInDarkMode
 import org.fossify.commons.extensions.lightenColor
 import org.fossify.keyboard.R
 import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_CUSTOM
+import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_DEFAULT
 import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_EXPRESSIVE
 import org.fossify.keyboard.helpers.KEYBOARD_PALETTE_TONAL_SPOT
 
 private fun Context.getBaseKeyboardBackground(): Int {
     return if (config.useAmoledMode) {
-        Color.BLACK
+        if (isSystemInDarkMode()) Color.BLACK else Color.WHITE
     } else if (isDynamicTheme()) {
         resources.getColor(R.color.you_keyboard_background_color, theme)
     } else {
@@ -65,32 +66,21 @@ fun Context.getKeyboardKeyColor(): Int {
         KEYBOARD_PALETTE_EXPRESSIVE -> ColorUtils.blendARGB(baseConfig.accentColor, backgroundColor, if (config.useAmoledMode) 0.28f else 0.48f)
         KEYBOARD_PALETTE_CUSTOM -> if (config.customKeyColor != 0) config.customKeyColor else getKeyboardPrimaryColor()
         else -> {
-            val lighterColor = backgroundColor.lightenColor()
-            if (!isDynamicTheme() && backgroundColor == Color.BLACK) backgroundColor.getContrastColor().adjustAlpha(0.14f) else lighterColor
-        }
-    }
-
-    return if (config.useAmoledMode) ColorUtils.blendARGB(paletteColor, Color.WHITE, 0.12f) else paletteColor
-}
-
-fun Context.getKeyboardKeyColor(): Int {
-    val backgroundColor = getKeyboardBackgroundColor()
-    val paletteColor = when (config.keyboardPaletteStyle) {
-        KEYBOARD_PALETTE_TONAL_SPOT -> ColorUtils.blendARGB(getProperPrimaryColor(), backgroundColor, if (config.useAmoledMode) 0.42f else 0.58f)
-        KEYBOARD_PALETTE_EXPRESSIVE -> ColorUtils.blendARGB(baseConfig.accentColor, backgroundColor, if (config.useAmoledMode) 0.35f else 0.52f)
-        KEYBOARD_PALETTE_KEY_COLOR_ONLY -> if (config.customKeyColor != 0) config.customKeyColor else getProperPrimaryColor()
-        else -> {
-            val lighterColor = backgroundColor.lightenColor()
-            if (!isDynamicTheme() && backgroundColor == Color.BLACK) {
-                backgroundColor.getContrastColor().adjustAlpha(0.12f)
+            if (config.useAmoledMode) {
+                if (isSystemInDarkMode()) {
+                    Color.parseColor("#1A1A1A") // Slight grayish key for pure black background
+                } else {
+                    Color.parseColor("#F0F0F0") // Slight dull grayish key for pure white background
+                }
             } else {
-                lighterColor
+                val lighterColor = backgroundColor.lightenColor()
+                if (!isDynamicTheme() && backgroundColor == Color.BLACK) backgroundColor.getContrastColor().adjustAlpha(0.14f) else lighterColor
             }
         }
     }
 
-    return if (config.useAmoledMode) {
-        ColorUtils.blendARGB(paletteColor, Color.WHITE, 0.12f)
+    return if (config.useAmoledMode && config.keyboardPaletteStyle != KEYBOARD_PALETTE_DEFAULT) {
+        ColorUtils.blendARGB(paletteColor, if (isSystemInDarkMode()) Color.WHITE else Color.BLACK, 0.12f)
     } else {
         paletteColor
     }
@@ -98,7 +88,11 @@ fun Context.getKeyboardKeyColor(): Int {
 
 fun Context.getStrokeColor(): Int {
     return if (config.useAmoledMode) {
-        ColorUtils.blendARGB(Color.WHITE, Color.BLACK, 0.82f)
+        if (isSystemInDarkMode()) {
+            ColorUtils.blendARGB(Color.WHITE, Color.BLACK, 0.82f)
+        } else {
+            ColorUtils.blendARGB(Color.BLACK, Color.WHITE, 0.82f)
+        }
     } else if (config.keyboardPaletteStyle == KEYBOARD_PALETTE_CUSTOM && config.customKeyboardTextColor != 0) {
         ColorUtils.blendARGB(config.customKeyboardTextColor, getKeyboardBackgroundColor(), 0.75f)
     } else if (isDynamicTheme()) {
